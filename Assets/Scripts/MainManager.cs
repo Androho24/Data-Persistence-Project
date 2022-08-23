@@ -1,18 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
+
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class MainManager : MonoBehaviour
 {
+    public static MainManager Instance;
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text HightScoreText;
     public GameObject GameOverText;
-    
     private bool m_Started = false;
     private int m_Points;
     
@@ -20,7 +25,7 @@ public class MainManager : MonoBehaviour
 
     
     // Start is called before the first frame update
-    void Start()
+    public void Start()
     {
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
@@ -36,6 +41,19 @@ public class MainManager : MonoBehaviour
                 brick.onDestroyed.AddListener(AddPoint);
             }
         }
+
+        LoadHighScore();
+
+    }
+
+    private void LoadHighScore()
+    {
+        MenuManager.Instance.LoadHighscore();
+        SetHighscoreText();
+    }
+
+    private void SetHighscoreText() {
+        HightScoreText.text = "Highscore: " + MenuManager.Instance.highscore + " Player Name: " + MenuManager.Instance.playerNameFromHighscore;
     }
 
     private void Update()
@@ -55,6 +73,18 @@ public class MainManager : MonoBehaviour
         }
         else if (m_GameOver)
         {
+            if (Input.GetKeyDown(KeyCode.Escape)) {
+
+
+
+               
+#if UNITY_EDITOR
+                EditorApplication.ExitPlaymode();
+#else
+        Application.Quit(); // original code to quit Unity player
+#endif
+
+            }
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
@@ -69,7 +99,15 @@ public class MainManager : MonoBehaviour
     }
 
     public void GameOver()
+       
     {
+      
+        if (m_Points >= MenuManager.Instance.highscore) {
+            MenuManager.Instance.saveHighscore(MenuManager.Instance.playerName, m_Points);
+           MenuManager.Instance.highscore = m_Points;
+           SetHighscoreText();
+        }
+
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
